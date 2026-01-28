@@ -1,4 +1,3 @@
-import json
 from sc_client.client import generate_elements, search_links_by_contents, search_by_template, erase_elements, generate_by_template, search_by_template
 from sc_client.constants import sc_type
 from sc_client.models import ScLinkContent, ScLinkContentType, ScConstruction, ScTemplate, ScAddr
@@ -322,10 +321,6 @@ def get_all_scenario_data() -> List[Dict]:
             }
         )
     return data
-
-
-
-
 
 def get_all_data() -> Dict:
     devices = get_all_device_data()

@@ -21,8 +21,7 @@ def create_room(name: str) -> None:
             construction = ScConstruction()  
             link_content1 = ScLinkContent(id, ScLinkContentType.STRING)
             construction.generate_link(sc_type.CONST_NODE_LINK, link_content1)
-            if (len(search_links_by_contents(construction)) == 0): return id
-            links = search_links_by_contents(construction)[0]
+            links = search_links_by_contents(id)[0]
             if len(links) == 0: break
         return type + id
     

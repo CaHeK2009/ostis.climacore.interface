@@ -10,8 +10,7 @@ const DEFAULT_COMFORT = {
     tempMin: 18.0,
     tempMax: 24.0,
     humMin: 40,
-    humMax: 60,
-    co2Threshold: 800
+    humMax: 60
 };
 
 const state = {
@@ -227,6 +226,7 @@ function renderRooms() {
             if (confirm(`Удалить комнату "${room?.name}"?`)) {
                 state.rooms = state.rooms.filter(r => r.id !== roomId);
                 state.devices = state.devices.filter(d => d.roomId !== roomId);
+                apiRequest('delete_room', []);
                 renderAll();
             }
         });
@@ -454,8 +454,8 @@ function populateSelects() {
         deviceTypeSelect.innerHTML = '<option value="">Выберите тип...</option>';
         state.deviceTypes.forEach(type => {
             const option = document.createElement('option');
-            option.value = type.id;
-            option.textContent = type.label;
+            option.value = type.nameEn;
+            option.textContent = type.nameRu;
             deviceTypeSelect.appendChild(option);
         });
     }
@@ -799,7 +799,6 @@ function setupModalHandlers() {
         $('#comfort-temp-max').value = state.comfort.tempMax;
         $('#comfort-hum-min').value = state.comfort.humMin;
         $('#comfort-hum-max').value = state.comfort.humMax;
-        $('#comfort-co2-threshold').value = state.comfort.co2Threshold;
         $('#comfort-modal').style.display = 'flex';
     });
 
@@ -810,12 +809,11 @@ function setupModalHandlers() {
             tempMax: parseFloat($('#comfort-temp-max').value) || DEFAULT_COMFORT.tempMax,
             humMin: parseInt($('#comfort-hum-min').value) || DEFAULT_COMFORT.humMin,
             humMax: parseInt($('#comfort-hum-max').value) || DEFAULT_COMFORT.humMax,
-            co2Threshold: parseInt($('#comfort-co2-threshold').value) || DEFAULT_COMFORT.co2Threshold
         };
         await apiRequest('create_preferencies', [
+            U1451484818,
             [state.comfort.tempMin, state.comfort.tempMax],
-            [state.comfort.humMin, state.comfort.humMax],
-            state.comfort.co2Threshold,
+            [state.comfort.humMin, state.comfort.humMax]
         ]);
         $('#comfort-modal').style.display = 'none';
         showMessage('Настройки сохранены!', 'success');

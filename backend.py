@@ -21,6 +21,10 @@ def call_utility(func_name, args):
         module = importlib.import_module(f"{UTILS_PACKAGE}.{func_name}")
         func = getattr(module, func_name)
         print(f"➡ {func_name}({args})")
+        if (func_name == "create_measurement"):
+            for arg in args:
+                func(*arg)
+            return True
         return func(*args)
     except Exception as e:
         print(f"❌ Ошибка при вызове {func_name}")

@@ -1,3 +1,4 @@
+import json
 from sc_client.client import generate_elements, search_links_by_contents, search_by_template, erase_elements, generate_by_template, search_by_template
 from sc_client.constants import sc_type
 from sc_client.models import ScLinkContent, ScLinkContentType, ScConstruction, ScTemplate, ScAddr
@@ -6,6 +7,8 @@ from sc_kpm.utils import get_link_content_data, get_element_system_identifier
 import random
 from sc_client.client import connect
 from typing import Dict, List
+
+connect("ws://localhost:8090")
 
 
 def get_all_device_data() -> List[Dict]:
@@ -80,7 +83,7 @@ def get_all_device_data() -> List[Dict]:
     for result in search_results:
         device_id = get_link_content_data(result.get("_id"))
         device_type_name = get_link_content_data(result.get("_device_type_name"))
-        device_type_id = get_element_system_identifier(result.get("_device_type")).split("concept_")[1]
+        device_type_id = get_link_content_data(result.get("_device_type_id"))
         room_id = get_link_content_data(result.get("_room_id"))
         power = False
         if result.get("_device_state") == ScKeynodes.resolve("is_on", sc_type.CONST_NODE): power = True
@@ -127,6 +130,40 @@ def get_all_rooms_data() -> List[Dict]:
         room_name = get_link_content_data(result.get("_room_idtf"))
         templ = ScTemplate()
         templ.quintuple(
+            (sc_type.VAR_NODE, "_measurements"),
+            sc_type.ACTUAL_TEMP_POS_ARC,
+            "_room",
+            sc_type.VAR_PERM_POS_ARC,
+            ScKeynodes.resolve("rrel_current_measurement", sc_type.CONST_NODE_ROLE)
+        )
+        templ.quintuple(
+            "_measurements",
+            sc_type.VAR_COMMON_ARC,
+            (sc_type.VAR_NODE_LINK, "_temp_link"),
+            sc_type.VAR_PERM_POS_ARC,
+            ScKeynodes.resolve("nrel_temp", sc_type.CONST_NODE_NON_ROLE)
+        )
+        templ.quintuple(
+            "_measurements",
+            sc_type.VAR_COMMON_ARC,
+            (sc_type.VAR_NODE_LINK, "_hum_link"),
+            sc_type.VAR_PERM_POS_ARC,
+            ScKeynodes.resolve("nrel_hum", sc_type.CONST_NODE_NON_ROLE)
+        )
+        templ.quintuple(
+            "_measurements",
+            sc_type.VAR_COMMON_ARC,
+            (sc_type.VAR_NODE_LINK, "_co2_link"),
+            sc_type.VAR_PERM_POS_ARC,
+            ScKeynodes.resolve("nrel_co2", sc_type.CONST_NODE_NON_ROLE)
+        )
+        search_results = search_by_template(templ)
+        if not search_results: return {}
+        temp = float(get_link_content_data(search_results[0].get("_temp_link")))
+        hum = float(get_link_content_data(search_results[0].get("_hum_link")))
+        co2 = float(get_link_content_data(search_results[0].get("_co2_link")))
+        templ = ScTemplate()
+        templ.quintuple(
             (sc_type.VAR_NODE, "_device"),
             sc_type.VAR_PERM_POS_ARC,
             room,
@@ -154,7 +191,10 @@ def get_all_rooms_data() -> List[Dict]:
             {
                 "id": room_id,
                 "name": room_name,
-                "devices": devices
+                "devices": devices,
+                "temp": temp,
+                "hum": hum,
+                "co2": co2
             }
         )
     return data
@@ -320,18 +360,90 @@ def get_all_scenario_data() -> List[Dict]:
                 "endTime": finish_time
             }
         )
-    return data
+def get_preferences() -> Dict:
+    templ = ScTemplate()
+    user = ScKeynodes.resolve("misha", sc_type.CONST_NODE)
+    templ.quintuple(
+        user,
+        sc_type.VAR_COMMON_ARC,
+        (sc_type.VAR_NODE, "_prefs"),
+        sc_type.VAR_PERM_POS_ARC,
+        ScKeynodes.resolve("nrel_prefs", sc_type.CONST_NODE_NON_ROLE)
+    )
+    templ.quintuple(
+        "_prefs",
+        sc_type.VAR_COMMON_ARC,
+        (sc_type.VAR_NODE, "_temp_range"),
+        sc_type.VAR_PERM_POS_ARC,
+        ScKeynodes.resolve("nrel_temp_range", sc_type.CONST_NODE_NON_ROLE)
+    )
+    templ.quintuple(
+        "_temp_range",
+        sc_type.VAR_COMMON_ARC,
+        (sc_type.VAR_NODE_LINK, "_temp_min"),
+        sc_type.VAR_PERM_POS_ARC,
+        ScKeynodes.resolve("nrel_min", sc_type.CONST_NODE_NON_ROLE)
+    )
+    templ.quintuple(
+        "_temp_range",
+        sc_type.VAR_COMMON_ARC,
+        (sc_type.VAR_NODE_LINK, "_temp_max"),
+        sc_type.VAR_PERM_POS_ARC,
+        ScKeynodes.resolve("nrel_max", sc_type.CONST_NODE_NON_ROLE)
+    )
+    templ.quintuple(
+        "_prefs",
+        sc_type.VAR_COMMON_ARC,
+        (sc_type.VAR_NODE, "_hum_range"),
+        sc_type.VAR_PERM_POS_ARC,
+        ScKeynodes.resolve("nrel_humidity_range", sc_type.CONST_NODE_NON_ROLE)
+    )
+    templ.quintuple(
+        "_hum_range",
+        sc_type.VAR_COMMON_ARC,
+        (sc_type.VAR_NODE_LINK, "_hum_min"),
+        sc_type.VAR_PERM_POS_ARC,
+        ScKeynodes.resolve("nrel_min", sc_type.CONST_NODE_NON_ROLE)
+    )
+    templ.quintuple(
+        "_hum_range",
+        sc_type.VAR_COMMON_ARC,
+        (sc_type.VAR_NODE_LINK, "_hum_max"),
+        sc_type.VAR_PERM_POS_ARC,
+        ScKeynodes.resolve("nrel_max", sc_type.CONST_NODE_NON_ROLE)
+    )
 
-def get_all_data() -> Dict:
+    search_results = search_by_template(templ)
+    if not search_results:
+        return {
+            "tempMin": -1,
+            "tempMax": -1,
+            "humMin": -1,
+            "humMax": -1
+        }
+    return {
+        "tempMin": float(get_link_content_data(search_results[0].get("_temp_min"))), 
+        "tempMax": float(get_link_content_data(search_results[0].get("_temp_max"))), 
+        "humMin": float(get_link_content_data(search_results[0].get("_hum_min"))), 
+        "humMax": float(get_link_content_data(search_results[0].get("_hum_max")))
+    }
+
+
+
+def get_all_data() -> json:
     devices = get_all_device_data()
     rooms = get_all_rooms_data()
     device_types = get_all_device_types_data()
     scenarios = get_all_scenario_data()
+    prefs = get_preferences()
     result = {
         "rooms": rooms,
         "devices": devices,
         "deviceTypes": device_types,
-        "scenarios": scenarios
+        "scenarios": scenarios,
+        "preferences": prefs
     }
     print(result)
     return result
+
+get_all_data()

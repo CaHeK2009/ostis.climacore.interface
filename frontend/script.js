@@ -99,10 +99,10 @@ async function loadStateFromServer() {
     data.rooms.forEach(room => {
         var temp = room.temperature + Math.random() * 4 - 2;
         var hum = room.humidity + Math.random() * 10 - 5;
-        var co2 = room.temperature + Math.random() * 40 - 20;
+        var co2 = room.co2 + Math.random() * 40 - 20;
         
         data.devices.filter(d => d.roomId === room.id && d.power).forEach(device => {
-            var type = data.deviceTypes.find(t => t.id === device.type);
+            var type = data.deviceTypes.find(t => t.nameEn === device.type);
             type.fixes.find(f => f === 'temp_state_high') ? temp += (Math.random() * 6) + 4 : null;
             type.fixes.find(f => f === 'temp_state_low') ? temp -= (Math.random() * 6) + 4 : null;
             type.fixes.find(f => f === 'hum_state_high') ? hum += (Math.random() * 18) + 12 : null;
@@ -114,7 +114,6 @@ async function loadStateFromServer() {
             type.causes.find(f => f === 'hum_state_high') ? hum += (Math.random() * 9) + 6 : null;
             type.causes.find(f => f === 'hum_state_low') ? hum -= (Math.random() * 9) + 6 : null;
             type.causes.find(f => f === 'co2_state_low') ? co2 += (Math.random() * 100) + 50 : null;
-            console.log("было");
         })
 
         room.temperature = temp;
@@ -123,10 +122,12 @@ async function loadStateFromServer() {
     });
 
     state.rooms = data.rooms || [];
-    // state.devices = data.devices || [];
-    // state.scenarios = data.scenarios || [];
-    // state.deviceTypes = data.device_types || [];
-    // state.comfort = data.comfort_settings || {...DEFAULT_COMFORT};
+    state.devices = data.devices || [];
+    state.scenarios = data.scenarios || [];
+    state.deviceTypes = data.device_types || [];
+    state.comfort = data.comfort_settings || {...DEFAULT_COMFORT};
+
+    apiRequest('create_measurement', [state.rooms]);
 
     console.log('📥 State загружен с сервера');
     renderAll();
@@ -489,7 +490,7 @@ function addRoom(name) {
     
     state.rooms.push(room);
     renderAll();
-    apiRequest('create_room', [name]);
+    apiRequest('create_room', [name, room.temperature, room.humidity, room.co2]);
     return room;
 }
 

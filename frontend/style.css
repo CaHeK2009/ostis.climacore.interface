@@ -766,6 +766,11 @@ form select:focus {
     height: 22px;
 }
 
+#reload-btn {
+    background: none;
+    border: none;
+}
+
 input:checked + .toggle-slider {
     background-color: var(--accent);
 }

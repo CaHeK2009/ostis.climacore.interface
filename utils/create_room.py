@@ -5,9 +5,10 @@ from sc_client.models import ScLinkContent, ScLinkContentType, ScConstruction, S
 from sc_kpm import ScKeynodes
 from sc_kpm.utils import get_link_content_data
 import random
+from typing import Tuple
 
-def create_room(name: str) -> None:
-    def generate_link_with_content(content, type) -> bool:
+def create_room(name: str, temp: float = 22.4, hum: float = 50, co2: float = 600.0) -> None:
+    def generate_link_with_content(content, type) -> Tuple[float, float, float]:
         construction = ScConstruction()  
         link_content1 = ScLinkContent(content, type)
         construction.generate_link(sc_type.CONST_NODE_LINK, link_content1)
@@ -28,6 +29,9 @@ def create_room(name: str) -> None:
 
     id_link = generate_link_with_content(create_id("R"), ScLinkContentType.STRING)
     main_idtf_link = generate_link_with_content(name, ScLinkContentType.STRING)
+    co2_link = generate_link_with_content(co2, ScLinkContentType.FLOAT)
+    temp_link = generate_link_with_content(temp, ScLinkContentType.FLOAT)
+    hum_link = generate_link_with_content(hum, ScLinkContentType.FLOAT)
 
     templ = ScTemplate()
     templ.triple(
@@ -49,6 +53,34 @@ def create_room(name: str) -> None:
         sc_type.VAR_PERM_POS_ARC,
         ScKeynodes.resolve("nrel_id", sc_type.CONST_NODE_NON_ROLE)
     )
+    templ.quintuple(
+        (sc_type.VAR_NODE, "_measurements"),
+        sc_type.ACTUAL_TEMP_POS_ARC,
+        "_room",
+        sc_type.VAR_PERM_POS_ARC,
+        ScKeynodes.resolve("rrel_current_measurement", sc_type.CONST_NODE_ROLE)
+    )
+    templ.quintuple(
+        "_measurements",
+        sc_type.VAR_COMMON_ARC,
+        temp_link,
+        sc_type.VAR_PERM_POS_ARC,
+        ScKeynodes.resolve("nrel_temp", sc_type.CONST_NODE_NON_ROLE)
+    )
+    templ.quintuple(
+        "_measurements",
+        sc_type.VAR_COMMON_ARC,
+        hum_link,
+        sc_type.VAR_PERM_POS_ARC,
+        ScKeynodes.resolve("nrel_hum", sc_type.CONST_NODE_NON_ROLE)
+    )
+    templ.quintuple(
+        "_measurements",
+        sc_type.VAR_COMMON_ARC,
+        co2_link,
+        sc_type.VAR_PERM_POS_ARC,
+        ScKeynodes.resolve("nrel_co2", sc_type.CONST_NODE_NON_ROLE)
+    )
     generate_by_template(templ)
-    return True
+    return temp, hum, co2
     

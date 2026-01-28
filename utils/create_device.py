@@ -5,7 +5,7 @@ from sc_kpm import ScKeynodes
 from sc_kpm.utils import get_link_content_data
 import random
 
-def create_device(device_type: str, room_id: str) -> bool:
+def create_device(name: str, device_type: str, room_id: str, power: bool = False) -> bool:
     def generate_link_with_content(content, type) -> None:
         construction = ScConstruction()  
         link_content1 = ScLinkContent(content, type)
@@ -46,6 +46,7 @@ def create_device(device_type: str, room_id: str) -> bool:
     if room_node == ScAddr(0): return False
 
     id_link = generate_link_with_content(create_id("D"), ScLinkContentType.STRING)
+    name_link = generate_link_with_content(name, ScLinkContentType.STRING)
     dev_type = ScKeynodes.resolve(f"concept_{device_type}", sc_type.CONST_NODE_CLASS)
     templ.triple(
         ScKeynodes.resolve("concept_device", sc_type.VAR_NODE_CLASS),
@@ -66,11 +67,30 @@ def create_device(device_type: str, room_id: str) -> bool:
     )
     templ.quintuple(
         "_device",
+        sc_type.VAR_COMMON_ARC,
+        name_link,
+        sc_type.VAR_PERM_POS_ARC,
+        ScKeynodes.resolve("nrel_main_idtf", sc_type.CONST_NODE_NON_ROLE)
+    )
+    templ.quintuple(
+        "_device",
         sc_type.VAR_PERM_POS_ARC,
         room_node,
         sc_type.VAR_PERM_POS_ARC,
         ScKeynodes.resolve("rrel_located_at", sc_type.CONST_NODE_ROLE)
     )
+    if power:
+        templ.triple(
+            ScKeynodes.resolve("is_on", sc_type.CONST_NODE),
+            sc_type.VAR_PERM_POS_ARC,
+            "_device"
+        )
+    else:
+        templ.triple(
+            ScKeynodes.resolve("is_off", sc_type.CONST_NODE),
+            sc_type.VAR_PERM_POS_ARC,
+            "_device"
+        )
     generate_by_template(templ)
     return True
 

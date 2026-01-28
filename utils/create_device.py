@@ -5,7 +5,7 @@ from sc_kpm import ScKeynodes
 from sc_kpm.utils import get_link_content_data
 import random
 
-def create_device(name: str, device_type: str, room_id: str, power: bool = False) -> bool:
+def create_device(name: str, device_type: str, room_id: str, power: bool = False) -> str:
     def generate_link_with_content(content, type) -> None:
         construction = ScConstruction()  
         link_content1 = ScLinkContent(content, type)
@@ -43,7 +43,7 @@ def create_device(name: str, device_type: str, room_id: str, power: bool = False
         if room_id == searched_id:
             room_node = result.get("_room")
             break
-    if room_node == ScAddr(0): return False
+    if room_node == ScAddr(0): return ""
 
     id_link = generate_link_with_content(create_id("D"), ScLinkContentType.STRING)
     name_link = generate_link_with_content(name, ScLinkContentType.STRING)
@@ -92,7 +92,7 @@ def create_device(name: str, device_type: str, room_id: str, power: bool = False
             "_device"
         )
     generate_by_template(templ)
-    return True
+    return id
 
 
 

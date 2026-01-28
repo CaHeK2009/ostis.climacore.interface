@@ -7,7 +7,7 @@ from sc_kpm.utils import get_link_content_data
 import random
 
 
-def create_device_type(name: str, en_name: str, fixes_states: List[str], causes_states: List[str], depends_on_weather: bool = False) -> bool:
+def create_device_type(name: str, en_name: str, fixes_states: List[str], causes_states: List[str], depends_on_weather: bool = False) -> str:
     def generate_link_with_content(content, type) -> None:
         construction = ScConstruction()  
         link_content1 = ScLinkContent(content, type)
@@ -88,4 +88,4 @@ def create_device_type(name: str, en_name: str, fixes_states: List[str], causes_
         )
 
     generate_by_template(templ)
-    return True
+    return id

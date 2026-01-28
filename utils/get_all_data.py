@@ -364,6 +364,7 @@ def get_all_scenario_data() -> List[Dict]:
             }
         )
     return data
+
 def get_preferences() -> Dict:
     templ = ScTemplate()
     user = ScKeynodes.resolve("misha", sc_type.CONST_NODE)

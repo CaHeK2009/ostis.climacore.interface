@@ -89,54 +89,117 @@ async function apiRequest(func, args = [], method = 'POST') {
 }
 
 async function loadStateFromServer() {
-    console.log('📥 Загрузка данных с сервера...');
     const res = await apiRequest('', [], 'GET');
-    
     if (res.status !== 'success') {
-        console.warn('❌ Не удалось загрузить данные с сервера:', res);
-        showMessage('Не удалось загрузить данные с сервера', 'error');
+        console.warn('Не удалось загрузить данные с сервера');
         return;
     }
 
     const data = res.data;
-    console.log('📊 Полученные данные:', data);
+    const measurements = [];
 
-    // Исправляем названия полей
+    // Симулируем данные с учетом устройств
+    if (data.rooms && data.rooms.length > 0) {
+        data.rooms.forEach(room => {
+            let temp = room.temperature || 22.0;
+            let hum = room.humidity || 50;
+            let co2 = room.co2 || 400;
+            
+            // Добавляем случайные колебания
+            temp += (Math.random() * 4 - 2);
+            hum += (Math.random() * 10 - 5);
+            co2 += (Math.random() * 40 - 20);
+            
+            // Влияние устройств
+            if (data.devices && data.deviceTypes) {
+                const devicesInRoom = data.devices.filter(d => 
+                    d.roomId === room.id && d.power === true
+                );
+                
+                devicesInRoom.forEach(device => {
+                    const deviceType = data.deviceTypes.find(t => 
+                        t.id === device.type || t.nameEn === device.type
+                    );
+                    
+                    if (deviceType) {
+                        // Fixes - исправляющие воздействия
+                        if (deviceType.fixes) {
+                            deviceType.fixes.forEach(fix => {
+                                switch(fix) {
+                                    case 'temp_state_high':
+                                        temp += (Math.random() * 6) + 4;
+                                        break;
+                                    case 'temp_state_low':
+                                        temp -= (Math.random() * 6) + 4;
+                                        break;
+                                    case 'hum_state_high':
+                                        hum += (Math.random() * 18) + 12;
+                                        break;
+                                    case 'hum_state_low':
+                                        hum -= (Math.random() * 18) + 12;
+                                        break;
+                                    case 'co2_state_low':
+                                        co2 += (Math.random() * 200) + 100;
+                                        break;
+                                }
+                            });
+                        }
+                        
+                        // Causes - вызывающие воздействия
+                        if (deviceType.causes) {
+                            deviceType.causes.forEach(cause => {
+                                switch(cause) {
+                                    case 'temp_state_high':
+                                        temp += (Math.random() * 3) + 2;
+                                        break;
+                                    case 'temp_state_low':
+                                        temp -= (Math.random() * 3) + 2;
+                                        break;
+                                    case 'hum_state_high':
+                                        hum += (Math.random() * 9) + 6;
+                                        break;
+                                    case 'hum_state_low':
+                                        hum -= (Math.random() * 9) + 6;
+                                        break;
+                                    case 'co2_state_high':
+                                        co2 += (Math.random() * 100) + 50;
+                                        break;
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+            
+            // Ограничиваем значения
+            temp = Math.max(15, Math.min(30, temp));
+            hum = Math.max(20, Math.min(80, hum));
+            co2 = Math.max(300, Math.min(1500, co2));
+            
+            // Обновляем комнату
+            room.temperature = parseFloat(temp.toFixed(1));
+            room.humidity = Math.round(hum);
+            room.co2 = Math.round(co2);
+            
+            // Добавляем измерение
+            measurements.push([room.id, room.temperature, room.humidity, room.co2]);
+        });
+    }
+
+    // Обновляем состояние
     state.rooms = data.rooms || [];
     state.devices = data.devices || [];
     state.scenarios = data.scenarios || [];
-    state.deviceTypes = data.device_types || data.deviceTypes || [];
-    
-    // Исправляем названия полей в комнатах
-    state.rooms.forEach(room => {
-        if (room.temp !== undefined) {
-            room.temperature = room.temp;
-            delete room.temp;
-        }
-        if (room.hum !== undefined) {
-            room.humidity = room.hum;
-            delete room.hum;
-        }
-    });
-    
-    // Исправляем настройки комфорта
-    const comfortData = data.comfort_settings || data.preferences || {};
-    state.comfort = {
-        tempMin: comfortData.tempMin || DEFAULT_COMFORT.tempMin,
-        tempMax: comfortData.tempMax || DEFAULT_COMFORT.tempMax,
-        humMin: comfortData.humMin || DEFAULT_COMFORT.humMin,
-        humMax: comfortData.humMax || DEFAULT_COMFORT.humMax,
-        co2Threshold: comfortData.co2Threshold || DEFAULT_COMFORT.co2Threshold
-    };
+    state.deviceTypes = data.deviceTypes || [];
+    state.comfort = data.preferences || {...DEFAULT_COMFORT};
 
-    console.log('✅ State загружен:', {
-        rooms: state.rooms.length,
-        devices: state.devices.length,
-        deviceTypes: state.deviceTypes.length,
-        scenarios: state.scenarios.length,
-        comfort: state.comfort
-    });
+    // Отправляем измерения на сервер
+    if (measurements.length > 0) {
+        apiRequest('create_measurement', measurements);
+        console.log(`📊 Отправлено ${measurements.length} измерений`);
+    }
 
+    console.log('📥 State загружен с сервера');
     renderAll();
 }
 

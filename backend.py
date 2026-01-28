@@ -13,7 +13,7 @@ app = Flask(
 )
 
 CORS(app)
-UTILS_PACKAGE = "utils"  # имя папки с утилитами
+UTILS_PACKAGE = "utils"
 
 
 def call_utility(func_name, args):

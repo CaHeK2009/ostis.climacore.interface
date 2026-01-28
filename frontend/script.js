@@ -107,7 +107,7 @@ async function loadStateFromServer() {
     renderAll();
 }
 
-setInterval(()=>{ loadStateFromServer(); }, 10000);
+//setInterval(()=>{ loadStateFromServer(); }, 10000);
 
 /* ========== DOM references (включая элементы выбора иконок) ========= */
 const roomsContainer = $('#rooms-container');
@@ -174,7 +174,7 @@ function renderRooms() {
             <div class="room-card">
                 <div class="room-card-header">
                     <h3>${room.name}</h3>
-                    <button class="delete" data-id="${room.id}">
+                    <button class="delete delete-room" id="${room.id}">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -220,8 +220,10 @@ function renderRooms() {
     // Обработчики удаления комнат
     $$('.delete-room').forEach(btn => {
         btn.addEventListener('click', function() {
-            const roomId = parseInt(this.dataset.id);
+            const roomId = btn.id;
+            console.log(roomId);
             const room = state.rooms.find(r => r.id === roomId);
+            console.log(room.name);
             if (confirm(`Удалить комнату "${room?.name}"?`)) {
                 state.rooms = state.rooms.filter(r => r.id !== roomId);
                 state.devices = state.devices.filter(d => d.roomId !== roomId);
@@ -520,7 +522,7 @@ function clearCustomIconPreview(hidePreview){
 
 function addRoom(name) {
     const room = {
-        id: new Date(),
+        id: 1,
         name: name,
         temperature: Math.round((22.0 + (Math.random() * 10 - 5)) * 10) / 10,
         humidity: Math.round(45 + (Math.random() * 40 - 20)),

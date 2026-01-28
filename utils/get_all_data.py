@@ -80,7 +80,7 @@ def get_all_device_data() -> List[Dict]:
     for result in search_results:
         device_id = get_link_content_data(result.get("_id"))
         device_type_name = get_link_content_data(result.get("_device_type_name"))
-        device_type_id = get_link_content_data(result.get("_device_type_id"))
+        device_type_id = get_element_system_identifier(result.get("_device_type")).split("concept_")[1]
         room_id = get_link_content_data(result.get("_room_id"))
         power = False
         if result.get("_device_state") == ScKeynodes.resolve("is_on", sc_type.CONST_NODE): power = True
@@ -327,9 +327,11 @@ def get_all_data() -> Dict:
     rooms = get_all_rooms_data()
     device_types = get_all_device_types_data()
     scenarios = get_all_scenario_data()
-    return {
+    result = {
         "rooms": rooms,
         "devices": devices,
-        "device_types": device_types,
+        "deviceTypes": device_types,
         "scenarios": scenarios
     }
+    print(result)
+    return result

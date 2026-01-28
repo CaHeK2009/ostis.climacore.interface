@@ -178,16 +178,24 @@
         <label>Что может влиять (fixes) — исправляющие состояния
           <div class="checkbox-group">
             <div class="checkbox-item">
-              <input type="checkbox" id="fixes-temperature" name="fixes" value="temperature">
-              <label class="checkbox-label" for="fixes-temperature">Температура</label>
+              <input type="checkbox" id="fixes-temperature1" name="fixes" value="temp_state_high">
+              <label class="checkbox-label" for="fixes-temperature">Повышенная темппература</label>
             </div>
             <div class="checkbox-item">
-              <input type="checkbox" id="fixes-humidity" name="fixes" value="humidity">
-              <label class="checkbox-label" for="fixes-humidity">Влажность</label>
+              <input type="checkbox" id="fixes-temperature2" name="fixes" value="temp_state_low">
+              <label class="checkbox-label" for="fixes-temperature">Пониженная темппература</label>
             </div>
             <div class="checkbox-item">
-              <input type="checkbox" id="fixes-co2" name="fixes" value="co2">
-              <label class="checkbox-label" for="fixes-co2">CO₂</label>
+              <input type="checkbox" id="fixes-humidity1" name="fixes" value="hum_state_high">
+              <label class="checkbox-label" for="fixes-humidity">Повышенная влажность</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="fixes-humidity2" name="fixes" value="hum_state_low">
+              <label class="checkbox-label" for="fixes-humidity">Пониженная влажность</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="fixes-co2" name="fixes" value="co2_state_high">
+              <label class="checkbox-label" for="fixes-co2">Повышенное состояние CO₂</label>
             </div>
           </div>
         </label>
@@ -195,24 +203,24 @@
         <label>Состояния, которые может вызвать (causes)
           <div class="checkbox-group">
             <div class="checkbox-item">
-              <input type="checkbox" id="cause-heating" name="causes" value="heating">
-              <label class="checkbox-label" for="cause-heating">Нагрев</label>
+              <input type="checkbox" id="causes-temperature1" name="causes" value="temp_state_high">
+              <label class="checkbox-label" for="causes-temperature">Повышенная темппература</label>
             </div>
             <div class="checkbox-item">
-              <input type="checkbox" id="cause-cooling" name="causes" value="cooling">
-              <label class="checkbox-label" for="cause-cooling">Охлаждение</label>
+              <input type="checkbox" id="causes-temperature2" name="causes" value="temp_state_low">
+              <label class="checkbox-label" for="causes-temperature">Пониженная темппература</label>
             </div>
             <div class="checkbox-item">
-              <input type="checkbox" id="cause-humidifying" name="causes" value="humidifying">
-              <label class="checkbox-label" for="cause-humidifying">Увлажнение</label>
+              <input type="checkbox" id="causes-humidity1" name="causes" value="hum_state_high">
+              <label class="checkbox-label" for="causes-humidity">Повышенная влажность</label>
             </div>
             <div class="checkbox-item">
-              <input type="checkbox" id="cause-dehumidifying" name="causes" value="dehumidifying">
-              <label class="checkbox-label" for="cause-dehumidifying">Осушение</label>
+              <input type="checkbox" id="causes-humidity2" name="causes" value="hum_state_low">
+              <label class="checkbox-label" for="causes-humidity">Пониженная влажность</label>
             </div>
             <div class="checkbox-item">
-              <input type="checkbox" id="cause-ventilation" name="causes" value="ventilation">
-              <label class="checkbox-label" for="cause-ventilation">Вентиляция</label>
+              <input type="checkbox" id="causes-co2" name="causes" value="co2_state_high">
+              <label class="checkbox-label" for="causes-co2">Повышенное состояние CO₂</label>
             </div>
           </div>
         </label>

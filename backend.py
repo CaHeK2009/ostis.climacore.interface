@@ -1,7 +1,10 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import importlib
+from sc_client.client import connect
 import traceback
+
+connect("ws://localhost:8090")
 
 app = Flask(
     __name__,
@@ -10,8 +13,8 @@ app = Flask(
 )
 
 CORS(app)
+UTILS_PACKAGE = "utils"
 
-UTILS_PACKAGE = "utils"  # имя папки с утилитами
 
 def call_utility(func_name, args):
     try:

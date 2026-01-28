@@ -140,18 +140,6 @@
           </div>
         </label>
 
-        <!-- Иконка / картинка устройства (добавлено из main1) -->
-        <label>Иконка / картинка устройства</label>
-        <div class="icon-chooser" id="icon-chooser">
-          <!-- иконки подгружаются скриптом -->
-        </div>
-        <div class="icon-upload">
-          <label class="small">Загрузить свою картинку (PNG/JPG)</label>
-          <input type="file" id="device-icon-upload" accept="image/*">
-          <div id="device-icon-preview" class="icon-preview"></div>
-          <button type="button" id="clear-custom-icon" class="btn" style="margin-top:8px;display:none">Сбросить загруженную картинку</button>
-        </div>
-
         <div class="form-actions">
           <button type="button" class="btn btn-danger" data-close="device-modal">Отмена</button>
           <button type="submit" class="btn btn-success">Добавить</button>
@@ -224,6 +212,14 @@
             </div>
           </div>
         </label>
+
+        <div class="device-toggle">
+          <label class="toggle-switch">
+            <input type="checkbox" id="type-weather" checked>
+            <span class="toggle-slider"></span>
+          </label>
+          <span>Зависит от погоды</span>
+        </div>
 
         <div class="form-actions">
           <button type="button" class="btn btn-danger" data-close="type-modal">Отмена</button>

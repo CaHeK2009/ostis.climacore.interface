@@ -23,8 +23,7 @@ const state = {
         tempMin: 18.0,
         tempMax: 24.0,
         humMin: 40,
-        humMax: 60,
-        co2Threshold: 800
+        humMax: 60
     }
 };
 
@@ -96,6 +95,31 @@ async function loadStateFromServer() {
 
     const data = res.data;
 
+    data.rooms.forEach(room => {
+        var temp = room.temperature + Math.random() * 4 - 2;
+        var hum = room.humidity + Math.random() * 10 - 5;
+        var co2 = room.temperature + Math.random() * 40 - 20;
+        
+        data.devices.filter(d => d.roomId === room.id && d.power).forEach(device => {
+            var type = data.deviceTypes.find(t => t.id === device.type);
+            type.fixes.find(f => f === 'temp_state_high') ? temp += (Math.random() * 6) + 4 : null;
+            type.fixes.find(f => f === 'temp_state_low') ? temp -= (Math.random() * 6) + 4 : null;
+            type.fixes.find(f => f === 'hum_state_high') ? hum += (Math.random() * 18) + 12 : null;
+            type.fixes.find(f => f === 'hum_state_low') ? hum -= (Math.random() * 18) + 12 : null;
+            type.fixes.find(f => f === 'co2_state_low') ? co2 += (Math.random() * 200) + 100 : null;
+
+            type.causes.find(f => f === 'temp_state_high') ? temp += (Math.random() * 3) + 2 : null;
+            type.causes.find(f => f === 'temp_state_low') ? temp -= (Math.random() * 3) + 2 : null;
+            type.causes.find(f => f === 'hum_state_high') ? hum += (Math.random() * 9) + 6 : null;
+            type.causes.find(f => f === 'hum_state_low') ? hum -= (Math.random() * 9) + 6 : null;
+            type.causes.find(f => f === 'co2_state_low') ? co2 += (Math.random() * 100) + 50 : null;
+        })
+
+        room.temperature = temp;
+        room.humidity = hum;
+        room.co2 = co2;
+    });
+
     state.rooms = data.rooms || [];
     state.devices = data.devices || [];
     state.scenarios = data.scenarios || [];
@@ -106,7 +130,7 @@ async function loadStateFromServer() {
     renderAll();
 }
 
-//setInterval(()=>{ loadStateFromServer(); }, 10000);
+setInterval(()=>{ loadStateFromServer(); }, 10000);
 
 /* ========== DOM references (включая элементы выбора иконок) ========= */
 const roomsContainer = $('#rooms-container');
@@ -137,13 +161,6 @@ const comfortForm = $('#comfort-form');
 const addScenarioBtn = $('#add-scenario-btn');
 const scenarioModal = $('#scenario-modal');
 const scenarioForm = $('#scenario-form');
-
-// icon chooser elements (добавлено из второго файла)
-const PRESET_ICONS = ['thermometer-half','microchip','tint','wind','fan','bolt','snowflake','broom','plug','lightbulb','leaf','house'];
-const iconChooserEl = $('#icon-chooser');
-const iconUploadInput = $('#device-icon-upload');
-const iconPreviewEl = $('#device-icon-preview');
-const clearCustomBtn = $('#clear-custom-icon');
 
 /* ========== РЕНДЕРИНГ: комнаты, устройства, типы, сценарии ========= */
 
@@ -220,9 +237,7 @@ function renderRooms() {
     $$('.delete-room').forEach(btn => {
         btn.addEventListener('click', function() {
             const roomId = btn.id;
-            console.log(roomId);
             const room = state.rooms.find(r => r.id === roomId);
-            console.log(room.name);
             if (confirm(`Удалить комнату "${room?.name}"?`)) {
                 state.rooms = state.rooms.filter(r => r.id !== roomId);
                 state.devices = state.devices.filter(d => d.roomId !== roomId);
@@ -260,7 +275,7 @@ function renderDevices() {
                     </div>
                 </div>
                 <div class="device-actions device-status">
-                    <button class="toggle-device ${device.power ? 'on' : 'off'}" data-id="${device.id}">
+                    <button class="toggle-device ${device.power ? 'on' : 'off'}" id="${device.id}">
                         ${device.power ? 'ВКЛ' : 'ВЫКЛ'}
                     </button>
                     <button class="delete icon-btn" data-id="${device.id}">
@@ -276,7 +291,7 @@ function renderDevices() {
     // Обработчики устройств
     $$('.toggle-device').forEach(btn => {
         btn.addEventListener('click', function() {
-            const deviceId = parseInt(this.dataset.id);
+            const deviceId = btn.id;
             const device = state.devices.find(d => d.id === deviceId);
             if (device) {
                 device.power = !device.power;
@@ -288,7 +303,7 @@ function renderDevices() {
     
     $$('.delete-device').forEach(btn => {
         btn.addEventListener('click', function() {
-            const deviceId = parseInt(this.dataset.id);
+            const deviceId = btn.id;
             const device = state.devices.find(d => d.id === deviceId);
             if (confirm(`Удалить устройство "${device?.name}"?`)) {
                 state.devices = state.devices.filter(d => d.id !== deviceId);
@@ -467,8 +482,7 @@ function addRoom(name) {
         name: name,
         temperature: Math.round((22.0 + (Math.random() * 10 - 5)) * 10) / 10,
         humidity: Math.round(45 + (Math.random() * 40 - 20)),
-        co2: Math.round(600 + (Math.random() * 200 - 100)),
-        devices: []
+        co2: Math.round(600 + (Math.random() * 200 - 100))
     };
     
     state.rooms.push(room);
@@ -496,17 +510,18 @@ function addDevice(name, type, roomId, power = true) {
     return device;
 }
 
-function addDeviceType(nameEn, nameRu, fixes = [], causes = []) {
+function addDeviceType(nameEn, nameRu, fixes = [], causes = [], dependsOnWeather = false) {
     const type = {
         nameEn : nameEn,
         nameRu: nameRu,
         fixes: fixes,
-        causes: causes
+        causes: causes,
+        dependsOnWeather: dependsOnWeather
     };
     
     state.deviceTypes.push(type);
     renderAll();
-    apiRequest('create_device_type', [nameEn, nameRu, fixes, causes]);
+    apiRequest('create_device_type', [nameEn, nameRu, fixes, causes, dependsOnWeather]);
     return type;
 }
 
@@ -644,8 +659,6 @@ function setupModalHandlers() {
             showMessage('Сначала добавьте комнату!', 'warning');
             return;
         }
-        initIconChooser();
-        resetIconUploadUI();
         $('#device-modal').style.display = 'flex';
         $('#device-name')?.focus();
     });
@@ -654,7 +667,7 @@ function setupModalHandlers() {
         e.preventDefault();
         const name = $('#device-name').value.trim();
         const type = $('#device-type').value;
-        const roomId = parseInt($('#device-room').value);
+        const roomId = $('#device-room').value;
         const power = $('#device-power') ? $('#device-power').checked : true;
 
         if (!name || !type || !roomId) {
@@ -678,6 +691,8 @@ function setupModalHandlers() {
         e.preventDefault();
         const nameEn = $('#type-key').value.trim().toLowerCase();
         const nameRu = $('#type-label').value.trim();
+        const dependsOnWeather = $('#type-weather') ? $('#device-weather').checked : true;
+
         if (!nameEn || !nameRu) {
             showMessage('Заполните обязательные поля!', 'warning');
             return;
@@ -691,7 +706,7 @@ function setupModalHandlers() {
         const causes = [];
         $$('input[name="causes"]:checked').forEach(cb => causes.push(cb.value));
 
-        addDeviceType(nameEn, nameRu, fixes, causes);
+        addDeviceType(nameEn, nameRu, fixes, causes, dependsOnWeather);
         $('#type-modal').style.display = 'none';
         this.reset();
         showMessage(`Тип устройства "${nameRu}" создан!`, 'success');
@@ -746,7 +761,7 @@ function setupModalHandlers() {
             humMax: parseInt($('#comfort-hum-max').value) || DEFAULT_COMFORT.humMax,
         };
         await apiRequest('create_preferencies', [
-            U1451484818,
+            'U1451484818',
             [state.comfort.tempMin, state.comfort.tempMax],
             [state.comfort.humMin, state.comfort.humMax]
         ]);

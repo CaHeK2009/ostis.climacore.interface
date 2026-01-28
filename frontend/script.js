@@ -10,8 +10,7 @@ const DEFAULT_COMFORT = {
     tempMin: 18.0,
     tempMax: 24.0,
     humMin: 40,
-    humMax: 60,
-    co2Threshold: 800
+    humMax: 60
 };
 
 const state = {
@@ -227,6 +226,7 @@ function renderRooms() {
             if (confirm(`Удалить комнату "${room?.name}"?`)) {
                 state.rooms = state.rooms.filter(r => r.id !== roomId);
                 state.devices = state.devices.filter(d => d.roomId !== roomId);
+                apiRequest('delete_room', []);
                 renderAll();
             }
         });
@@ -251,14 +251,12 @@ function renderDevices() {
     state.devices.forEach(device => {
         const room = state.rooms.find(r => r.id === device.roomId);
         const type = state.deviceTypes.find(t => t.id === device.type);
-        const iconHtml = device.customIcon ? `<div class="device-img"><img src="${device.customIcon}" alt=""></div>` : `<div class="device-icon"><i class="fas fa-${device.icon || getDeviceIcon(device.type)}"></i></div>`;
         html += `
             <div class="device-item">
                 <div class="device-info">
-                    ${iconHtml}
                     <div class="device-details">
                         <h4>${device.name}</h4>
-                        <p>${type ? type.label : device.type} | ${room ? room.name : 'Без комнаты'}</p>
+                        <p>${type ? type.nameRu : device.type} | ${room ? room.name : 'Без комнаты'}</p>
                     </div>
                 </div>
                 <div class="device-actions device-status">
@@ -454,68 +452,11 @@ function populateSelects() {
         deviceTypeSelect.innerHTML = '<option value="">Выберите тип...</option>';
         state.deviceTypes.forEach(type => {
             const option = document.createElement('option');
-            option.value = type.id;
-            option.textContent = type.label;
+            option.value = type.nameEn;
+            option.textContent = type.nameRu;
             deviceTypeSelect.appendChild(option);
         });
     }
-}
-
-/* ========== Icon chooser logic (взято из малого файла) ========= */
-function initIconChooser(){
-  if (!iconChooserEl) return;
-  iconChooserEl.innerHTML = '';
-  PRESET_ICONS.forEach(ic => {
-    const btn = document.createElement('div');
-    btn.className = 'icon-option';
-    btn.dataset.icon = ic;
-    btn.innerHTML = `<i class="fas fa-${ic}"></i>`;
-    btn.addEventListener('click', ()=>{
-      $$('.icon-option').forEach(x=>x.classList.remove('selected'));
-      btn.classList.add('selected');
-      clearCustomIconPreview(false);
-    });
-    iconChooserEl.appendChild(btn);
-  });
-  const first = iconChooserEl.querySelector('.icon-option');
-  if (first) first.classList.add('selected');
-}
-
-function resetIconUploadUI(){
-  if (!iconUploadInput) return;
-  iconUploadInput.value = '';
-  if (clearCustomBtn) clearCustomBtn.style.display = 'none';
-  clearCustomIconPreview(true);
-}
-
-if (iconUploadInput) {
-  iconUploadInput.addEventListener('change', e=>{
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(ev){
-      const url = ev.target.result;
-      if (iconPreviewEl) iconPreviewEl.innerHTML = `<img src="${url}" alt="preview" style="width:64px;height:64px;border-radius:8px;object-fit:cover">`;
-      if (clearCustomBtn) clearCustomBtn.style.display = 'inline-block';
-      $$('.icon-option').forEach(x=>x.classList.remove('selected'));
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
-if (clearCustomBtn) {
-  clearCustomBtn.addEventListener('click', ()=>{
-    if (iconUploadInput) iconUploadInput.value='';
-    clearCustomIconPreview(true);
-    const first = iconChooserEl?.querySelector('.icon-option');
-    if (first) first.classList.add('selected');
-  });
-}
-
-function clearCustomIconPreview(hidePreview){
-  if (!iconPreviewEl) return;
-  iconPreviewEl.innerHTML = '';
-  if (hidePreview && clearCustomBtn) clearCustomBtn.style.display = 'none';
 }
 
 /* ========== БИЗНЕС-ЛОГИКА (комнаты, устройства, типы, сценарии) ========= */
@@ -541,19 +482,17 @@ function getDeviceIcon(typeKey){
   return t ? t.icon : 'plug';
 }
 
-function addDevice(name, type, roomId, power = true, presetIcon = null, customDataUrl = null) {
+function addDevice(name, type, roomId, power = true) {
     const device = {
         name: name,
         type: type,
         roomId: roomId,
         power: power,
-        icon: presetIcon || getDeviceIcon(type),
-        customIcon: customDataUrl || null
     };
     
     state.devices.push(device);
     renderAll();
-    apiRequest('create_device', [name, type, roomId, power, device.icon || device.customIcon]);
+    apiRequest('create_device', [name, type, roomId, power]);
     return device;
 }
 
@@ -723,11 +662,7 @@ function setupModalHandlers() {
             return;
         }
 
-        // Получим выбранный пресет и кастомный dataURL (если есть)
-        const selectedPreset = iconChooserEl?.querySelector('.icon-option.selected')?.dataset.icon || null;
-        const customDataUrl = iconPreviewEl?.querySelector('img') ? iconPreviewEl.querySelector('img').src : null;
-
-        addDevice(name, type, roomId, power, selectedPreset, customDataUrl);
+        addDevice(name, type, roomId, power);
         $('#device-modal').style.display = 'none';
         this.reset();
         showMessage(`Устройство "${name}" добавлено!`, 'success');
@@ -799,7 +734,6 @@ function setupModalHandlers() {
         $('#comfort-temp-max').value = state.comfort.tempMax;
         $('#comfort-hum-min').value = state.comfort.humMin;
         $('#comfort-hum-max').value = state.comfort.humMax;
-        $('#comfort-co2-threshold').value = state.comfort.co2Threshold;
         $('#comfort-modal').style.display = 'flex';
     });
 
@@ -810,12 +744,11 @@ function setupModalHandlers() {
             tempMax: parseFloat($('#comfort-temp-max').value) || DEFAULT_COMFORT.tempMax,
             humMin: parseInt($('#comfort-hum-min').value) || DEFAULT_COMFORT.humMin,
             humMax: parseInt($('#comfort-hum-max').value) || DEFAULT_COMFORT.humMax,
-            co2Threshold: parseInt($('#comfort-co2-threshold').value) || DEFAULT_COMFORT.co2Threshold
         };
         await apiRequest('create_preferencies', [
+            U1451484818,
             [state.comfort.tempMin, state.comfort.tempMax],
-            [state.comfort.humMin, state.comfort.humMax],
-            state.comfort.co2Threshold,
+            [state.comfort.humMin, state.comfort.humMax]
         ]);
         $('#comfort-modal').style.display = 'none';
         showMessage('Настройки сохранены!', 'success');

@@ -1,0 +1,7 @@
+Flask==2.3.3
+Flask-CORS==4.0.0
+Flask-SocketIO==5.3.4
+python-socketio==5.9.0
+eventlet==0.33.3
+py-sc-kpm==0.4.0
+py-sc-client==0.4.0

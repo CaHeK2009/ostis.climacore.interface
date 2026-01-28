@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Умный микроклимат — панель управления</title>
+
+  <!-- Font Awesome для иконок -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <i class="fas fa-house"></i>
+        <div>
+          <h1>Умный микроклимат</h1>
+          <p>Панель управления микроклиматом — демо</p>
+        </div>
+      </div>
+
+      <div class="stats-bar">
+        <div class="stat-item">
+          <div class="stat-value" id="avg-temp">— °C</div>
+          <div class="stat-label">Средняя температура</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="avg-humidity">— %</div>
+          <div class="stat-label">Средняя влажность</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="avg-co2">— ppm</div>
+          <div class="stat-label">Средний CO₂</div>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <!-- Left: комнаты -->
+      <section class="rooms-section">
+        <div class="section-header">
+          <h2 class="section-title"><i class="fas fa-door-closed"></i> Комнаты</h2>
+          <div class="controls-right">
+            <button class="btn" id="add-room-btn"><i class="fas fa-plus"></i> Добавить</button>
+            <button class="btn" id="open-comfort-btn" title="Настройки комфорта"><i class="fas fa-user"></i> Мои предпочтения</button>
+          </div>
+        </div>
+
+        <div id="rooms-container" class="rooms-grid"></div>
+      </section>
+
+      <!-- Right: устройства / типы / сценарии -->
+      <aside class="right-panel">
+        <div class="panel-block">
+          <div class="section-header">
+            <h2 class="section-title"><i class="fas fa-plug"></i> Устройства</h2>
+            <button class="btn" id="add-device-btn"><i class="fas fa-plus"></i> Добавить</button>
+          </div>
+          <div id="devices-container" class="devices-list"></div>
+        </div>
+
+        <div class="panel-block">
+          <div class="section-header">
+            <h2 class="section-title"><i class="fas fa-cubes"></i> Типы устройств</h2>
+            <button class="btn" id="add-type-btn"><i class="fas fa-plus"></i> Новый тип</button>
+          </div>
+          <div id="types-container" class="devices-list"></div>
+        </div>
+
+        <div class="panel-block">
+          <div class="section-header">
+            <h2 class="section-title"><i class="fas fa-play-circle"></i> Сценарии</h2>
+            <button class="btn" id="add-scenario-btn"><i class="fas fa-plus"></i> Создать</button>
+          </div>
+          <div id="scenarios-container" class="devices-list"></div>
+        </div>
+      </aside>
+    </main>
+
+    <footer>
+      <small>Демо — умный микроклимат • Включение/выключение устройств влияет на микроклимат</small>
+    </footer>
+  </div>
+
+  <!-- Модали -->
+  <!-- Добавить комнату -->
+  <div class="modal" id="room-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Добавить комнату</h3>
+        <button class="close-modal" data-close="room-modal">&times;</button>
+      </div>
+      <form id="room-form">
+        <label>Название
+          <input type="text" id="room-name" required placeholder="Гостиная">
+        </label>
+        <div class="form-actions">
+          <button type="button" class="btn btn-danger" data-close="room-modal">Отмена</button>
+          <button type="submit" class="btn btn-success">Добавить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Добавить устройство (base from main2 + icon chooser from main1) -->
+  <div class="modal" id="device-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Добавить устройство</h3>
+        <button class="close-modal" data-close="device-modal">&times;</button>
+      </div>
+      <form id="device-form">
+        <label>Название
+          <input type="text" id="device-name" required placeholder="Термостат">
+        </label>
+
+        <label>Тип устройства
+          <select id="device-type" required>
+            <!-- динамично -->
+          </select>
+        </label>
+
+        <label>Комната
+          <select id="device-room" required>
+            <!-- динамично -->
+          </select>
+        </label>
+
+        <!-- Начальный статус (из main2) -->
+        <label>Начальный статус
+          <div class="device-toggle">
+            <label class="toggle-switch">
+              <input type="checkbox" id="device-power" checked>
+              <span class="toggle-slider"></span>
+            </label>
+            <span id="device-power-status">Включено</span>
+          </div>
+        </label>
+
+        <!-- Иконка / картинка устройства (добавлено из main1) -->
+        <label>Иконка / картинка устройства</label>
+        <div class="icon-chooser" id="icon-chooser">
+          <!-- иконки подгружаются скриптом -->
+        </div>
+        <div class="icon-upload">
+          <label class="small">Загрузить свою картинку (PNG/JPG)</label>
+          <input type="file" id="device-icon-upload" accept="image/*">
+          <div id="device-icon-preview" class="icon-preview"></div>
+          <button type="button" id="clear-custom-icon" class="btn" style="margin-top:8px;display:none">Сбросить загруженную картинку</button>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-danger" data-close="device-modal">Отмена</button>
+          <button type="submit" class="btn btn-success">Добавить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Добавить тип устройства (main2) -->
+  <div class="modal" id="type-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Новый тип устройства</h3>
+        <button class="close-modal" data-close="type-modal">&times;</button>
+      </div>
+      <form id="type-form">
+        <label>Название на английском (id)
+          <input type="text" id="type-key" required placeholder="thermostat">
+        </label>
+        <label>Название
+          <input type="text" id="type-label" required placeholder="Термостат">
+        </label>
+
+        <label>Что может влиять (fixes) — исправляющие состояния
+          <div class="checkbox-group">
+            <div class="checkbox-item">
+              <input type="checkbox" id="fixes-temperature" name="fixes" value="temperature">
+              <label class="checkbox-label" for="fixes-temperature">Температура</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="fixes-humidity" name="fixes" value="humidity">
+              <label class="checkbox-label" for="fixes-humidity">Влажность</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="fixes-co2" name="fixes" value="co2">
+              <label class="checkbox-label" for="fixes-co2">CO₂</label>
+            </div>
+          </div>
+        </label>
+
+        <label>Состояния, которые может вызвать (causes)
+          <div class="checkbox-group">
+            <div class="checkbox-item">
+              <input type="checkbox" id="cause-heating" name="causes" value="heating">
+              <label class="checkbox-label" for="cause-heating">Нагрев</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="cause-cooling" name="causes" value="cooling">
+              <label class="checkbox-label" for="cause-cooling">Охлаждение</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="cause-humidifying" name="causes" value="humidifying">
+              <label class="checkbox-label" for="cause-humidifying">Увлажнение</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="cause-dehumidifying" name="causes" value="dehumidifying">
+              <label class="checkbox-label" for="cause-dehumidifying">Осушение</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="cause-ventilation" name="causes" value="ventilation">
+              <label class="checkbox-label" for="cause-ventilation">Вентиляция</label>
+            </div>
+          </div>
+        </label>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-danger" data-close="type-modal">Отмена</button>
+          <button type="submit" class="btn btn-success">Создать тип</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Комфортные настройки -->
+  <div class="modal" id="comfort-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Комфортные параметры</h3>
+        <button class="close-modal" data-close="comfort-modal">&times;</button>
+      </div>
+      <form id="comfort-form">
+        <label>Температура — мин/макс (°C)
+          <div class="inline">
+            <input type="number" id="comfort-temp-min" step="0.1"> —
+            <input type="number" id="comfort-temp-max" step="0.1">
+          </div>
+        </label>
+
+        <label>Влажность — мин/макс (%)
+          <div class="inline">
+            <input type="number" id="comfort-hum-min"> —
+            <input type="number" id="comfort-hum-max">
+          </div>
+        </label>
+
+        <label>CO₂ порог (ppm) — выше = высокий
+          <input type="number" id="comfort-co2-threshold">
+        </label>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-danger" data-close="comfort-modal">Отмена</button>
+          <button type="submit" class="btn btn-success">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Сценарий -->
+  <div class="modal" id="scenario-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Новый сценарий</h3>
+        <button class="close-modal" data-close="scenario-modal">&times;</button>
+      </div>
+      <form id="scenario-form">
+        <label>Название
+          <input type="text" id="scenario-name" required placeholder="Утро — комфорт">
+        </label>
+
+        <label>Комната
+          <select id="scenario-room">
+            <!-- комнаты динамично -->
+          </select>
+        </label>
+
+        <label>Целевая температура (°C)
+          <input type="number" id="scenario-temp" step="0.1" required>
+        </label>
+
+        <label>Целевая влажность (%)
+          <input type="number" id="scenario-humidity" required>
+        </label>
+
+        <label>Время запуска (ЧЧ:MM)
+          <input type="time" id="scenario-start-time" required>
+        </label>
+
+        <label>Время завершения (ЧЧ:MM)
+          <input type="time" id="scenario-end-time" required>
+        </label>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-danger" data-close="scenario-modal">Отмена</button>
+          <button type="submit" class="btn btn-success">Создать сценарий</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Скрипт -->
+  <script src="/script.js"></script>
+</body>
+</html>

@@ -3,6 +3,7 @@ from flask_cors import CORS
 import importlib
 from sc_client.client import connect
 import traceback
+import json
 
 connect("ws://localhost:8090")
 
@@ -21,7 +22,7 @@ def call_utility(func_name, args):
         module = importlib.import_module(f"{UTILS_PACKAGE}.{func_name}")
         func = getattr(module, func_name)
         print(f"➡ {func_name}({args})")
-        if (func_name == "create_measurement"):
+        if func_name == "create_measurement":
             for arg in args:
                 func(*arg)
             return True
@@ -35,13 +36,22 @@ def call_utility(func_name, args):
 @app.route("/api/dispatch", methods=["GET", "POST"])
 def dispatch():
     if request.method == "GET":
+        print("📥 GET запрос на получение всех данных")
+        try:
             from utils.get_all_data import get_all_data
-
             data = get_all_data()
+            print("✅ Данные успешно получены")
             return jsonify({
                 "status": "success",
                 "data": data
             })
+        except Exception as e:
+            print(f"❌ Ошибка при получении данных: {e}")
+            traceback.print_exc()
+            return jsonify({
+                "status": "error",
+                "message": str(e)
+            }), 500
     
     data = request.get_json(force=True)
 
@@ -52,18 +62,22 @@ def dispatch():
         return jsonify({"status": "error", "message": "No func provided"}), 400
 
     try:
-        call_utility(func_name, args)
-        return jsonify({ "status": "ok" })
-
+        result = call_utility(func_name, args)
+        return jsonify({ 
+            "status": "ok",
+            "result": result 
+        })
     except Exception as e:
         return jsonify({
             "status": "error",
             "message": str(e)
         }), 500
 
+
 @app.route("/")
 def index():
     return send_from_directory('frontend', 'main.html')
+
 
 if __name__ == "__main__":
     print("🚀 Backend started on http://localhost:2000")

@@ -158,10 +158,13 @@ def get_all_rooms_data() -> List[Dict]:
             ScKeynodes.resolve("nrel_co2", sc_type.CONST_NODE_NON_ROLE)
         )
         search_results = search_by_template(templ)
-        if not search_results: return {}
-        temp = float(get_link_content_data(search_results[0].get("_temp_link")))
-        hum = float(get_link_content_data(search_results[0].get("_hum_link")))
-        co2 = float(get_link_content_data(search_results[0].get("_co2_link")))
+        temp = 22.4
+        hum = 50
+        co2 = 400
+        if search_results: 
+            temp = float(get_link_content_data(search_results[0].get("_temp_link")))
+            hum = float(get_link_content_data(search_results[0].get("_hum_link")))
+            co2 = float(get_link_content_data(search_results[0].get("_co2_link")))
         templ = ScTemplate()
         templ.quintuple(
             (sc_type.VAR_NODE, "_device"),
@@ -360,6 +363,7 @@ def get_all_scenario_data() -> List[Dict]:
                 "endTime": finish_time
             }
         )
+    return data
 def get_preferences() -> Dict:
     templ = ScTemplate()
     user = ScKeynodes.resolve("misha", sc_type.CONST_NODE)
@@ -430,7 +434,7 @@ def get_preferences() -> Dict:
 
 
 
-def get_all_data() -> json:
+def get_all_data() -> Dict:
     devices = get_all_device_data()
     rooms = get_all_rooms_data()
     device_types = get_all_device_types_data()
@@ -443,7 +447,6 @@ def get_all_data() -> json:
         "scenarios": scenarios,
         "preferences": prefs
     }
-    print(result)
     return result
 
 get_all_data()

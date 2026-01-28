@@ -12,6 +12,7 @@ const DEFAULT_COMFORT = {
     humMin: 40,
     humMax: 60
 };
+const USER_ID = 'U1451484818';
 
 const state = {
     rooms: [],
@@ -113,6 +114,7 @@ async function loadStateFromServer() {
             type.causes.find(f => f === 'hum_state_high') ? hum += (Math.random() * 9) + 6 : null;
             type.causes.find(f => f === 'hum_state_low') ? hum -= (Math.random() * 9) + 6 : null;
             type.causes.find(f => f === 'co2_state_low') ? co2 += (Math.random() * 100) + 50 : null;
+            console.log("было");
         })
 
         room.temperature = temp;
@@ -121,16 +123,16 @@ async function loadStateFromServer() {
     });
 
     state.rooms = data.rooms || [];
-    state.devices = data.devices || [];
-    state.scenarios = data.scenarios || [];
-    state.deviceTypes = data.device_types || [];
-    state.comfort = data.comfort_settings || {...DEFAULT_COMFORT};
+    // state.devices = data.devices || [];
+    // state.scenarios = data.scenarios || [];
+    // state.deviceTypes = data.device_types || [];
+    // state.comfort = data.comfort_settings || {...DEFAULT_COMFORT};
 
     console.log('📥 State загружен с сервера');
     renderAll();
 }
 
-setInterval(()=>{ loadStateFromServer(); }, 10000);
+//setInterval(()=>{ loadStateFromServer(); }, 10000);
 
 /* ========== DOM references (включая элементы выбора иконок) ========= */
 const roomsContainer = $('#rooms-container');
@@ -278,7 +280,7 @@ function renderDevices() {
                     <button class="toggle-device ${device.power ? 'on' : 'off'}" id="${device.id}">
                         ${device.power ? 'ВКЛ' : 'ВЫКЛ'}
                     </button>
-                    <button class="delete icon-btn" data-id="${device.id}">
+                    <button class="delete icon-btn" id="${device.id}">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -538,7 +540,7 @@ function addScenario({ name, roomId, temp, hum, startTime, endTime }) {
 
     scheduleScenario(s);
     state.scenarios.push(s);
-    apiRequest('create_scenario', [name, roomId, temp, hum, startTime, endTime]);
+    apiRequest('create_scenario', [USER_ID, name, startTime, endTime, roomId, hum, temp]);
     renderAll();
 }
 
@@ -691,7 +693,7 @@ function setupModalHandlers() {
         e.preventDefault();
         const nameEn = $('#type-key').value.trim().toLowerCase();
         const nameRu = $('#type-label').value.trim();
-        const dependsOnWeather = $('#type-weather') ? $('#device-weather').checked : true;
+        const dependsOnWeather = $('#type-weather') ? $('#type-weather').checked : true;
 
         if (!nameEn || !nameRu) {
             showMessage('Заполните обязательные поля!', 'warning');
@@ -761,7 +763,7 @@ function setupModalHandlers() {
             humMax: parseInt($('#comfort-hum-max').value) || DEFAULT_COMFORT.humMax,
         };
         await apiRequest('create_preferencies', [
-            'U1451484818',
+            USER_ID,
             [state.comfort.tempMin, state.comfort.tempMax],
             [state.comfort.humMin, state.comfort.humMax]
         ]);
@@ -777,6 +779,10 @@ function setupModalHandlers() {
             statusEl.textContent = this.checked ? 'Включено' : 'Выключено';
         }
     });
+
+    $('#reload-btn')?.addEventListener('click', function() {
+        loadStateFromServer();
+    })
 
     // Закрытие модалок
     $$('.close-modal, .btn-danger[data-close]').forEach(btn => {

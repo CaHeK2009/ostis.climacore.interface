@@ -761,6 +761,11 @@ form select:focus {
     border-radius: 50%;
 }
 
+.weather {
+    margin-top: 5px;
+    height: 22px;
+}
+
 input:checked + .toggle-slider {
     background-color: var(--accent);
 }

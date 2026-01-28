@@ -1,15 +1,10 @@
 import json
-from sc_client.client import generate_elements, search_links_by_contents, search_by_template, erase_elements, generate_by_template, search_by_template
+from sc_client.client import search_by_template, search_by_template
 from sc_client.constants import sc_type
-from sc_client.models import ScLinkContent, ScLinkContentType, ScConstruction, ScTemplate, ScAddr
+from sc_client.models import ScTemplate
 from sc_kpm import ScKeynodes
 from sc_kpm.utils import get_link_content_data, get_element_system_identifier
-import random
-from sc_client.client import connect
 from typing import Dict, List
-
-connect("ws://localhost:8090")
-
 
 def get_all_device_data() -> List[Dict]:
     templ = ScTemplate()
@@ -93,9 +88,7 @@ def get_all_device_data() -> List[Dict]:
                 "name": device_type_name,
                 "type": device_type_id,
                 "roomId": room_id,
-                "power": power,
-                "icon": "fan",
-                "customIcon": None
+                "power": power
             }
         )
     return res
@@ -158,7 +151,7 @@ def get_all_rooms_data() -> List[Dict]:
             ScKeynodes.resolve("nrel_co2", sc_type.CONST_NODE_NON_ROLE)
         )
         search_results = search_by_template(templ)
-        if not search_results: return {}
+        if not search_results: return []
         temp = float(get_link_content_data(search_results[0].get("_temp_link")))
         hum = float(get_link_content_data(search_results[0].get("_hum_link")))
         co2 = float(get_link_content_data(search_results[0].get("_co2_link")))
@@ -192,14 +185,12 @@ def get_all_rooms_data() -> List[Dict]:
                 "id": room_id,
                 "name": room_name,
                 "devices": devices,
-                "temp": temp,
-                "hum": hum,
+                "temperature": temp,
+                "humidity": hum,
                 "co2": co2
             }
         )
     return data
-    
-    
 
 def get_all_device_types_data() -> List[Dict]:
     templ = ScTemplate()
@@ -360,6 +351,8 @@ def get_all_scenario_data() -> List[Dict]:
                 "endTime": finish_time
             }
         )
+    return data
+
 def get_preferences() -> Dict:
     templ = ScTemplate()
     user = ScKeynodes.resolve("misha", sc_type.CONST_NODE)
@@ -430,7 +423,7 @@ def get_preferences() -> Dict:
 
 
 
-def get_all_data() -> json:
+def get_all_data() -> Dict:
     devices = get_all_device_data()
     rooms = get_all_rooms_data()
     device_types = get_all_device_types_data()
@@ -445,5 +438,3 @@ def get_all_data() -> json:
     }
     print(result)
     return result
-
-get_all_data()

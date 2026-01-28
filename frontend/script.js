@@ -95,8 +95,9 @@ async function loadStateFromServer() {
     }
 
     const data = res.data;
+    const measurement = [[]]
 
-    data.rooms.forEach(room => {
+    data.rooms.length != 0 ? data.rooms.forEach(room => {
         var temp = room.temperature + Math.random() * 4 - 2;
         var hum = room.humidity + Math.random() * 10 - 5;
         var co2 = room.co2 + Math.random() * 40 - 20;
@@ -114,20 +115,22 @@ async function loadStateFromServer() {
             type.causes.find(f => f === 'hum_state_high') ? hum += (Math.random() * 9) + 6 : null;
             type.causes.find(f => f === 'hum_state_low') ? hum -= (Math.random() * 9) + 6 : null;
             type.causes.find(f => f === 'co2_state_low') ? co2 += (Math.random() * 100) + 50 : null;
-        })
+        });
 
-        room.temperature = temp;
-        room.humidity = hum;
-        room.co2 = co2;
-    });
+        room.temperature = Math.round(temp * 10) / 10;
+        room.humidity = Math.round(hum);
+        room.co2 = Math.round(co2);
+        measurement.push([room.id, temp, hum, co2]);
+    }) : null;
 
     state.rooms = data.rooms || [];
     state.devices = data.devices || [];
     state.scenarios = data.scenarios || [];
-    state.deviceTypes = data.device_types || [];
-    state.comfort = data.comfort_settings || {...DEFAULT_COMFORT};
+    state.deviceTypes = data.deviceTypes || [];
+    state.comfort = data.preferences || {...DEFAULT_COMFORT};
 
-    apiRequest('create_measurement', [state.rooms]);
+    console.log(measurement);
+    measurement == [] ? apiRequest('create_measurement', measurement) : null;
 
     console.log('📥 State загружен с сервера');
     renderAll();

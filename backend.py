@@ -4,8 +4,6 @@ import importlib
 from sc_client.client import connect
 import traceback
 
-connect("ws://localhost:8090")
-
 app = Flask(
     __name__,
     static_folder="frontend",
@@ -67,4 +65,5 @@ def index():
 
 if __name__ == "__main__":
     print("🚀 Backend started on http://localhost:2000")
+    connect("ws://localhost:8090")
     app.run(host="0.0.0.0", port=2000, debug=True)

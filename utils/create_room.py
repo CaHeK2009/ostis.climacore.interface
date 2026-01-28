@@ -7,8 +7,8 @@ from sc_kpm.utils import get_link_content_data
 import random
 from typing import Tuple
 
-def create_room(name: str, temp: float = 22.4, hum: float = 50, co2: float = 600.0) -> None:
-    def generate_link_with_content(content, type) -> Tuple[float, float, float]:
+def create_room(name: str, temp: float = 22.4, hum: float = 50, co2: float = 600.0) -> Tuple[str, float, float, float]:
+    def generate_link_with_content(content, type) -> ScAddr:
         construction = ScConstruction()  
         link_content1 = ScLinkContent(content, type)
         construction.generate_link(sc_type.CONST_NODE_LINK, link_content1)
@@ -82,5 +82,5 @@ def create_room(name: str, temp: float = 22.4, hum: float = 50, co2: float = 600
         ScKeynodes.resolve("nrel_co2", sc_type.CONST_NODE_NON_ROLE)
     )
     generate_by_template(templ)
-    return temp, hum, co2
+    return id, temp, hum, co2
     

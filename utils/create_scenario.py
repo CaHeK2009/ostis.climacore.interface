@@ -5,7 +5,7 @@ from sc_kpm import ScKeynodes
 from sc_kpm.utils import get_link_content_data
 import random
 
-def create_scenario(user_id: str, name: str, start_time: str, finish_time: str, room_id: str, hum: float, temp: float) -> bool:
+def create_scenario(user_id: str, name: str, start_time: str, finish_time: str, room_id: str, hum: float, temp: float) -> str:
     def generate_link_with_content(content, type) -> None:
         construction = ScConstruction()  
         link_content1 = ScLinkContent(content, type)
@@ -46,7 +46,7 @@ def create_scenario(user_id: str, name: str, start_time: str, finish_time: str, 
         if room_id == searched_id:
             room_node = result.get("_room")
             break
-    if room_node == ScAddr(0): return False
+    if room_node == ScAddr(0): return ""
 
     user = ScAddr(0)
 
@@ -70,7 +70,7 @@ def create_scenario(user_id: str, name: str, start_time: str, finish_time: str, 
         if get_link_content_data(id) != user_id: continue
         user = result.get("_user")
         break
-    if user == ScAddr(0): return False
+    if user == ScAddr(0): return ""
 
     scenario_id = generate_link_with_content(create_id("SC"), ScLinkContentType.STRING)
     main_idtf_link = generate_link_with_content(name, ScLinkContentType.STRING)
@@ -153,5 +153,5 @@ def create_scenario(user_id: str, name: str, start_time: str, finish_time: str, 
         ScKeynodes.resolve("nrel_room", sc_type.CONST_NODE_NON_ROLE)
     )
     generate_by_template(templ)
-    return True
+    return id
 

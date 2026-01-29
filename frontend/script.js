@@ -105,71 +105,13 @@ async function loadStateFromServer() {
             let hum = room.humidity || 50;
             let co2 = room.co2 || 400;
             
-            // Добавляем случайные колебания
+            // Добавляем случайные колебания только для показаний датчиков
             temp += (Math.random() * 4 - 2);
             hum += (Math.random() * 10 - 5);
             co2 += (Math.random() * 40 - 20);
             
-            // Влияние устройств
-            if (data.devices && data.deviceTypes) {
-                const devicesInRoom = data.devices.filter(d => 
-                    d.roomId === room.id && d.power === true
-                );
-                
-                devicesInRoom.forEach(device => {
-                    const deviceType = data.deviceTypes.find(t => 
-                        t.id === device.type || t.nameEn === device.type
-                    );
-                    
-                    if (deviceType) {
-                        // Fixes - исправляющие воздействия
-                        if (deviceType.fixes) {
-                            deviceType.fixes.forEach(fix => {
-                                switch(fix) {
-                                    case 'temp_state_high':
-                                        temp += (Math.random() * 6) + 4;
-                                        break;
-                                    case 'temp_state_low':
-                                        temp -= (Math.random() * 6) + 4;
-                                        break;
-                                    case 'hum_state_high':
-                                        hum += (Math.random() * 18) + 12;
-                                        break;
-                                    case 'hum_state_low':
-                                        hum -= (Math.random() * 18) + 12;
-                                        break;
-                                    case 'co2_state_low':
-                                        co2 += (Math.random() * 200) + 100;
-                                        break;
-                                }
-                            });
-                        }
-                        
-                        // Causes - вызывающие воздействия
-                        if (deviceType.causes) {
-                            deviceType.causes.forEach(cause => {
-                                switch(cause) {
-                                    case 'temp_state_high':
-                                        temp += (Math.random() * 3) + 2;
-                                        break;
-                                    case 'temp_state_low':
-                                        temp -= (Math.random() * 3) + 2;
-                                        break;
-                                    case 'hum_state_high':
-                                        hum += (Math.random() * 9) + 6;
-                                        break;
-                                    case 'hum_state_low':
-                                        hum -= (Math.random() * 9) + 6;
-                                        break;
-                                    case 'co2_state_high':
-                                        co2 += (Math.random() * 100) + 50;
-                                        break;
-                                }
-                            });
-                        }
-                    }
-                });
-            }
+            // УБРАТЬ АВТОМАТИЧЕСКОЕ ИЗМЕНЕНИЕ СОСТОЯНИЯ УСТРОЙСТВ
+            // ЭТО БЫЛО ИСТОЧНИКОМ ПРОБЛЕМЫ
             
             // Ограничиваем значения
             temp = Math.max(15, Math.min(30, temp));
@@ -327,29 +269,59 @@ function renderDevices() {
     
     container.innerHTML = html;
     
-    // Обработчики устройств
+    // Обработчики устройств - ИСПРАВЛЕНО
     $$('.toggle-device').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', async function() {
             const deviceId = this.dataset.id;
             const device = state.devices.find(d => d.id === deviceId);
             if (device) {
+                // Сохраняем предыдущее состояние на случай ошибки
+                const previousState = device.power;
+                
+                // Меняем состояние локально для быстрого отклика UI
                 device.power = !device.power;
-                renderAll();
-                apiRequest('change_device_state', [device.id, device.power]);
-                showMessage(`Устройство "${device.name}" ${device.power ? 'включено' : 'выключено'}`, 'success');
+                this.textContent = device.power ? 'ВКЛ' : 'ВЫКЛ';
+                this.classList.toggle('on', device.power);
+                this.classList.toggle('off', !device.power);
+                
+                // Отправляем запрос на сервер
+                try {
+                    const result = await apiRequest('change_device_state', [device.id, device.power]);
+                    if (result.status !== 'ok') {
+                        // Если ошибка - возвращаем предыдущее состояние
+                        device.power = previousState;
+                        this.textContent = device.power ? 'ВКЛ' : 'ВЫКЛ';
+                        this.classList.toggle('on', device.power);
+                        this.classList.toggle('off', !device.power);
+                        showMessage(`Ошибка: ${result.message}`, 'error');
+                    } else {
+                        showMessage(`Устройство "${device.name}" ${device.power ? 'включено' : 'выключено'}`, 'success');
+                    }
+                } catch (error) {
+                    // Если ошибка сети - возвращаем предыдущее состояние
+                    device.power = previousState;
+                    this.textContent = device.power ? 'ВКЛ' : 'ВЫКЛ';
+                    this.classList.toggle('on', device.power);
+                    this.classList.toggle('off', !device.power);
+                    showMessage(`Ошибка сети: ${error.message}`, 'error');
+                }
             }
         });
     });
     
     $$('.delete-device').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', async function() {
             const deviceId = this.dataset.id;
             const device = state.devices.find(d => d.id === deviceId);
             if (confirm(`Удалить устройство "${device?.name}"?`)) {
-                state.devices = state.devices.filter(d => d.id !== deviceId);
-                renderAll();
-                apiRequest('delete_device_by_id', [deviceId]);
-                showMessage(`Устройство "${device?.name}" удалено`, 'success');
+                const result = await apiRequest('delete_device_by_id', [deviceId]);
+                if (result.status === 'ok') {
+                    state.devices = state.devices.filter(d => d.id !== deviceId);
+                    renderAll();
+                    showMessage(`Устройство "${device?.name}" удалено`, 'success');
+                } else {
+                    showMessage(`Ошибка при удалении: ${result.message}`, 'error');
+                }
             }
         });
     });
@@ -568,7 +540,7 @@ function populateSelects() {
 /* ========== БИЗНЕС-ЛОГИКА ========== */
 function addRoom(name) {
     const room = {
-        id: 'room_' + Date.now(),
+        id: 'room_' + Date.now(), // Временный ID для фронтенда
         name: name,
         temperature: parseFloat((22.0 + (Math.random() * 4 - 2)).toFixed(1)),
         humidity: Math.round(50 + (Math.random() * 20 - 10)),
@@ -577,7 +549,23 @@ function addRoom(name) {
     
     state.rooms.push(room);
     renderAll();
-    apiRequest('create_room', [name, room.temperature, room.humidity, room.co2]);
+    
+    // Отправляем запрос на создание комнаты
+    apiRequest('create_room', [name, room.temperature, room.humidity, room.co2])
+        .then(result => {
+            if (result.status === 'ok' && result.result) {
+                // Обновляем ID комнаты с тем, что вернул сервер
+                const createdRoom = state.rooms.find(r => r.name === name);
+                if (createdRoom) {
+                    createdRoom.id = result.result; // Используем ID с сервера
+                    console.log(`Комната создана с ID: ${result.result}`);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка при создании комнаты:', error);
+        });
+    
     return room;
 }
 

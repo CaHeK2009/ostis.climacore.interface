@@ -129,7 +129,6 @@ async function loadStateFromServer() {
     state.deviceTypes = data.deviceTypes || [];
     state.comfort = data.preferences || {...DEFAULT_COMFORT};
 
-    console.log(measurement);
     measurement == [] ? apiRequest('create_measurement', measurement) : null;
 
     console.log('📥 State загружен с сервера');
@@ -284,7 +283,7 @@ function renderDevices() {
                     <button class="toggle-device ${device.power ? 'on' : 'off'}" id="${device.id}">
                         ${device.power ? 'ВКЛ' : 'ВЫКЛ'}
                     </button>
-                    <button class="delete icon-btn" id="${device.id}">
+                    <button class="delete icon-btn delete-device" id="${device.id}">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -298,7 +297,7 @@ function renderDevices() {
     $$('.toggle-device').forEach(btn => {
         btn.addEventListener('click', function() {
             const deviceId = btn.id;
-            const device = state.devices.find(d => d.id === deviceId);
+            const device = state.devices.find(d => d.id == deviceId);
             if (device) {
                 device.power = !device.power;
                 renderAll();
@@ -310,9 +309,9 @@ function renderDevices() {
     $$('.delete-device').forEach(btn => {
         btn.addEventListener('click', function() {
             const deviceId = btn.id;
-            const device = state.devices.find(d => d.id === deviceId);
+            const device = state.devices.find(d => d.id == deviceId);
             if (confirm(`Удалить устройство "${device?.name}"?`)) {
-                state.devices = state.devices.filter(d => d.id !== deviceId);
+                state.devices = state.devices.filter(d => d.id != deviceId);
                 renderAll();
                 apiRequest('delete_device_by_id', [deviceId]);
             }
@@ -347,7 +346,7 @@ function renderDeviceTypes() {
                     </div>
                 </div>
                 <div class="device-status">
-                    <button class="icon-btn delete" data-id="${type.nameEn}" title="Удалить тип"><i class="fas fa-trash"></i></button>
+                    <button class="icon-btn delete delete-type" id="${type.nameEn}" title="Удалить тип"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
         `;
@@ -357,9 +356,9 @@ function renderDeviceTypes() {
     
     $$('.delete-type').forEach(btn=>{
       btn.addEventListener('click', ()=>{
-        const id = btn.dataset.id;
+        const id = btn.id;
         if (!confirm('Удалить тип устройства? Устройства с этим типом останутся, но без типа.')) return;
-        state.deviceTypes = state.deviceTypes.filter(x=>x.id!==id);
+        state.deviceTypes = state.deviceTypes.filter(x=>x.nameEn!=id);
         renderAll();
       });
     });
@@ -398,28 +397,20 @@ function renderScenarios() {
                     </div>
                 </div>
                 <div class="device-status">
-                    <button class="icon-btn delete" data-id="${scenario.id}" title="Удалить"><i class="fas fa-trash"></i></button>
+                    <button class="icon-btn delete delete-scenario" id="${scenario.id}" title="Удалить"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
         `;
     });
     
     container.innerHTML = html;
-    
-    $$('.run-scenario').forEach(btn=>{
-        btn.addEventListener('click', ()=>{
-            const id = btn.dataset.id;
-            const s = state.scenarios.find(x=>x.id==id);
-            if (s) { applyScenario(s); renderAll(); alert('Сценарий применён'); }
-        });
-    });
 
     $$('.delete-scenario').forEach(btn => {
         btn.addEventListener('click', () => {
-            const id = btn.dataset.id;
-            const s = state.scenarios.find(x => x.id === id);
+            const id = btn.id;
+            const s = state.scenarios.find(x => x.id == id);
             if (!confirm('Удалить сценарий?')) return;
-            state.scenarios = state.scenarios.filter(x => x.id !== id);
+            state.scenarios = state.scenarios.filter(x => x.id != id);
             renderAll();
         });
     });
@@ -504,6 +495,7 @@ function getDeviceIcon(typeKey){
 
 function addDevice(name, type, roomId, power = true) {
     const device = {
+        id: 1,
         name: name,
         type: type,
         roomId: roomId,
@@ -534,6 +526,7 @@ function addDeviceType(nameEn, nameRu, fixes = [], causes = [], dependsOnWeather
 /* ========== Сценарии (планирование) ========= */
 function addScenario({ name, roomId, temp, hum, startTime, endTime }) {
     const s = {
+        id: 1,
         name : name,
         roomId : roomId,
         temp : temp,
